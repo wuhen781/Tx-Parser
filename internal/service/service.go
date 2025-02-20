@@ -1,5 +1,7 @@
 package service
 
+import "github.com/wuhen781/Tx-Parser/pkg/ethclient"
+
 type Parser interface {
 	GetCurrentBlock() int
 	Subscribe(address string) bool
@@ -10,8 +12,8 @@ type EthParser struct {
 }
 
 func (this *EthParser) GetCurrentBlock() (int, error) {
-	ethclient := NewEthclient("")
-	blockNumber, err := ethclient.GetCurrentBlock()
+	client := ethclient.NewEthclient("")
+	blockNumber, err := client.GetCurrentBlock()
 	if err != nil {
 		log.Printf("Error getting current block: %v", err)
 	}
