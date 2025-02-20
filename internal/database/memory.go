@@ -3,8 +3,8 @@ package database
 type memoryDb struct {
 	transactions           map[string][]Transaction
 	subscribers            map[string]*subscriberInfo
-	lastUpdatedBlcokNumber int
-	transOffetsInLastBlcok int
+	lastUpdatedBlockNumber int
+	transOffetsInLastBlock int
 }
 
 type subscriberInfo struct {
@@ -16,8 +16,8 @@ func NewMemoryDb() *memoryDb {
 	return &memoryDb{
 		transactions:           make(map[string][]Transaction),
 		subscribers:            make(map[string]*subscriberInfo),
-		lastUpdatedBlcokNumber: -1,
-		transOffetsInLastBlcok: 0,
+		lastUpdatedBlockNumber: -1,
+		transOffetsInLastBlock: 0,
 	}
 }
 
@@ -48,7 +48,9 @@ func (this *memoryDb) SetTransactions(transactions []Transaction) bool {
 		if _, ok := this.transactions[to]; !ok {
 			this.transactions[to] = make([]Transaction, 0)
 		}
+		tx.Type = "outbound"
 		this.transactions[from] = append(this.transactions[from], tx)
+		tx.Type = "inbound"
 		this.transactions[to] = append(this.transactions[to], tx)
 	}
 	return true
@@ -67,19 +69,19 @@ func (this *memoryDb) GetTransactions(address string) []Transaction {
 }
 
 func (this *memoryDb) GetLastUpdatedBlockNumber() int {
-	return this.lastUpdatedBlcokNumber
+	return this.lastUpdatedBlockNumber
 }
 
 func (this *memoryDb) SetLastUpdatedBlockNumber(blockNumber int) bool {
-	this.lastUpdatedBlcokNumber = blockNumber
+	this.lastUpdatedBlockNumber = blockNumber
 	return true
 }
 
 func (this *memoryDb) GetTransOffetsInLastBlock() int {
-	return this.transOffetsInLastBlcok
+	return this.transOffetsInLastBlock
 }
 
 func (this *memoryDb) SetTransOffetsInLastBlock(offset int) bool {
-	this.transOffetsInLastBlcok = offset
+	this.transOffetsInLastBlock = offset
 	return true
 }

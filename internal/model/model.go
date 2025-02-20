@@ -1,16 +1,17 @@
 package model
 
 import "github.com/wuhen781/Tx-Parser/internal/database"
+import "errors"
 
-var ErrBlockNumberNotInitialed = errors.New("lastBlcokNumber is not initialed")
-var ErrBLockNumberIsUpdated = errors.New("lastBlcokNumber is updated")
+var ErrBlockNumberNotInitialed = errors.New("lastBlockNumber is not initialed")
+var ErrBLockNumberIsUpdated = errors.New("lastBlockNumber is updated")
 
 type ModelParser struct {
-	db Db
+	db database.Db
 }
 
 func NewModelParser() *ModelParser {
-	db := NewMemoryDb()
+	db := database.NewMemoryDb()
 	return &ModelParser{
 		db,
 	}
@@ -24,31 +25,26 @@ func (this *ModelParser) AddSubscribe(address string, blockNumber int) bool {
 	return this.db.AddSubscribe(address, blockNumber)
 }
 
-func (this *ModelParser) updateTransactionsByLastBlockNumber(currentBlockNumber int) error {
-	lastBlcokNumber := this.db.GetLastUpdatedBlcokNumber()
-	if lastBlcokNumber < 0 {
+func (this *ModelParser) updateTransactionsByLastBlockNumber(currentBlockNumber int, transactions []database.Transaction) error {
+	lastBlockNumber := this.db.GetLastUpdatedBlockNumber()
+	if lastBlockNumber < 0 {
 		return ErrBlockNumberNotInitialed
-	}
-	transactions, err2 := client.GetBlockByNumber(lastBlcokNumber)
-	if err2 != nil {
-		fmt.Errorf("GetBlockByNumber error : %w", err2)
-		return err2
 	}
 	transLen := len(transactions)
 	transOffset := this.db.GetTransOffetsInLastBlock()
 	transactions = transactions[transOffset:transLen] //skip the part that has already been saved
-	subscribers := this.db.GetSubscribeFromBlockNumber(blockNumber)
+	subscribers := this.db.GetSubscribeFromBlockNumber(lastBlockNumber)
 	subMaps := make(map[string]bool)
 	for _, subscriber := range subscribers {
 		subMaps[subscriber] = true
 	}
 	subscrbTrans := make([]database.Transaction, 0)
 	for _, transaction := range transactions {
-		from, to := transaction.from, transaction.to
-		if subMaps[from] == true {
-			subscrbTran := data.Transaction{
-				From: transaction.From,
-				To:   transaction, To,
+		from, to := transaction.From, transaction.To
+		if subMaps[from] == true || subMaps[to] == true {
+			subscrbTran := database.Transaction{
+				From:        transaction.From,
+				To:          transaction.To,
 				Value:       transaction.Value,
 				BlockNumber: transaction.BlockNumber,
 				Gas:         transaction.Gas,
@@ -56,32 +52,17 @@ func (this *ModelParser) updateTransactionsByLastBlockNumber(currentBlockNumber 
 				Hash:        transaction.Hash,
 				Nonce:       transaction.Nonce,
 				Timestamp:   transaction.Timestamp,
-				Type:        "outbound",
-			}
-			subscrbTrans = append(subscrbTrans, subscrbTran)
-		}
-		if subMaps[to] == true {
-			subscrbTran := data.Transaction{
-				From: transaction.From,
-				To:   transaction, To,
-				Value:       transaction.Value,
-				BlockNumber: transaction.BlockNumber,
-				Gas:         transaction.Gas,
-				GasPrice:    transaction.GasPrice,
-				Hash:        transaction.Hash,
-				Nonce:       transaction.Nonce,
-				Timestamp:   transaction.Timestamp,
-				Type:        "inbound",
+				Type:        "",
 			}
 			subscrbTrans = append(subscrbTrans, subscrbTran)
 		}
 	}
 	if this.db.SetTransactions(subscrbTrans) {
-		if currentBlcokNumber == lastBlcokNumber {
+		if currentBlockNumber == lastBlockNumber {
 			this.db.SetTransOffetsInLastBlock(transLen)
 		} else {
 			this.db.SetTransOffetsInLastBlock(0)
-			this.db.SetLastUpdatedBlcokNumber(lastBlcokNumber + 1)
+			this.db.SetLastUpdatedBlockNumber(lastBlockNumber + 1)
 		}
 	}
 	return nil

@@ -5,8 +5,8 @@ type Db interface {
 	GetSubscribeFromBlockNumber(blockNumber int) []string
 	GetTransactions(address string) []Transaction
 	SetTransactions(transactions []Transaction) bool
-	GetLastUpdatedBlcokNumber() int
-	SetLastUpdatedBlcokNumber(blockNumber int) bool
+	GetLastUpdatedBlockNumber() int
+	SetLastUpdatedBlockNumber(blockNumber int) bool
 	GetTransOffetsInLastBlock() int
 	SetTransOffetsInLastBlock(offset int) bool
 }
