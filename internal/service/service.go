@@ -3,11 +3,14 @@ package service
 import "github.com/wuhen781/Tx-Parser/pkg/ethclient"
 import "github.com/wuhen781/Tx-Parser/internal/database"
 import "github.com/wuhen781/Tx-Parser/internal/model"
+import "log"
+import "time"
+import "context"
 
 type Parser interface {
 	GetCurrentBlock() int
 	Subscribe(address string) bool
-	GetTransactions(address string) []Transaction
+	GetTransactions(address string) []database.Transaction
 }
 
 type EthParser struct {
@@ -56,11 +59,10 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 			return
 		case <-timer.C:
 		}
-		start := time.Now()
 
 		lastBlockNumber := modelParser.db.GetLastUpdatedBlockNumber()
 
-		blockNumber, err := client.GetCurrentBlock()
+		currentBlockNumber, err := client.GetCurrentBlock()
 		transactions, err2 := client.GetBlockByNumber(lastBlockNumber)
 		if err != nil {
 			log.Printf("Error getting current block: %v", err)
@@ -87,6 +89,7 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 			if err3 != nil {
 				log.Printf("Error updateTransactionsByLastBlockNumber %v", err)
 			} else {
+				start := time.Now()
 				log.Printf("Debug updateTransactionsByLastBlockNumber lastBlockNumber = %d , currentBlockNumber, len(transactions) = %d", lastBlockNumber, currentBlockNumber, len(dbTransactions))
 			}
 		}
