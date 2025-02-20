@@ -35,14 +35,15 @@ func TestUpdateTransactionsInBackGroundRegularly(t *testing.T) {
 	defer cancel()
 
 	parser := NewEthParser()
+	parser.Subscribe("0x123")
 
 	// Run the update function in a separate goroutine
 	go func() {
-		parser.UpdateTransactionsInBackGroundRegularly(ctx, 1*time.Second)
+		parser.UpdateTransactionsInBackGroundRegularly(ctx, 1)
 	}()
 
 	// Allow some time for execution
-	time.Sleep(3 * time.Second)
+	time.Sleep(10 * time.Second)
 
 	// Stop the background process
 	cancel()

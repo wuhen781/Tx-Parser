@@ -14,10 +14,13 @@ type Parser interface {
 }
 
 type EthParser struct {
+	modelParser *model.ModelParser
 }
 
 func NewEthParser() *EthParser {
-	return &EthParser{}
+	return &EthParser{
+		modelParser: model.NewModelParser(),
+	}
 }
 
 func (this *EthParser) GetCurrentBlock() (int, error) {
@@ -36,7 +39,7 @@ func (this *EthParser) Subscribe(address string) bool {
 		log.Printf("Error getting current block: %v", err)
 		return false
 	}
-	modelParser := model.NewModelParser()
+	modelParser := this.modelParser
 	return modelParser.AddSubscribe(address, blockNumber)
 }
 
@@ -50,7 +53,7 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 
-	modelParser := model.NewModelParser()
+	modelParser := this.modelParser
 	client := ethclient.NewEthclient("")
 
 	for {
@@ -60,8 +63,7 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 		case <-timer.C:
 		}
 
-		lastBlockNumber := modelParser.db.GetLastUpdatedBlockNumber()
-
+		lastBlockNumber := modelParser.GetDb().GetLastUpdatedBlockNumber()
 		currentBlockNumber, err := client.GetCurrentBlock()
 		transactions, err2 := client.GetBlockByNumber(lastBlockNumber)
 		if err != nil {
@@ -85,15 +87,14 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 				}
 				dbTransactions[idx] = dbTx
 			}
-			err3 := modelParser.updateTransactionsByLastBlockNumber(currentBlockNumber, dbTransactions)
+			err3 := modelParser.UpdateTransactionsByLastBlockNumber(currentBlockNumber, dbTransactions)
 			if err3 != nil {
 				log.Printf("Error updateTransactionsByLastBlockNumber %v", err)
 			} else {
-				start := time.Now()
-				log.Printf("Debug updateTransactionsByLastBlockNumber lastBlockNumber = %d , currentBlockNumber, len(transactions) = %d", lastBlockNumber, currentBlockNumber, len(dbTransactions))
+				log.Printf("Debug updateTransactionsByLastBlockNumber lastBlockNumber = %d , currentBlockNumber = %d, len(transactions) = %d", lastBlockNumber, currentBlockNumber, len(dbTransactions))
 			}
 		}
-		timer.Reset(interval)
+		timer.Reset(time.Duration(interval) * time.Second)
 	}
 
 }

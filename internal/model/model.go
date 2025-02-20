@@ -22,10 +22,18 @@ func (this *ModelParser) GetTransactions(address string) []database.Transaction 
 }
 
 func (this *ModelParser) AddSubscribe(address string, blockNumber int) bool {
+	lastBlockNumber := this.db.GetLastUpdatedBlockNumber()
+	if lastBlockNumber < 0 {
+		this.db.SetLastUpdatedBlockNumber(blockNumber)
+	}
 	return this.db.AddSubscribe(address, blockNumber)
 }
 
-func (this *ModelParser) updateTransactionsByLastBlockNumber(currentBlockNumber int, transactions []database.Transaction) error {
+func (this *ModelParser) GetDb() database.Db {
+	return this.db
+}
+
+func (this *ModelParser) UpdateTransactionsByLastBlockNumber(currentBlockNumber int, transactions []database.Transaction) error {
 	lastBlockNumber := this.db.GetLastUpdatedBlockNumber()
 	if lastBlockNumber < 0 {
 		return ErrBlockNumberNotInitialed
