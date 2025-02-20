@@ -48,9 +48,9 @@ func (this *memoryDb) SetTransactions(transactions []Transaction) bool {
 		if _, ok := this.transactions[to]; !ok {
 			this.transactions[to] = make([]Transaction, 0)
 		}
+		this.transactions[from] = append(this.transactions[from], tx)
+		this.transactions[to] = append(this.transactions[to], tx)
 	}
-	this.transactions[from] = append(this.transactions[from], tx)
-	this.transactions[to] = append(this.transactions[to], tx)
 	return true
 }
 
@@ -72,7 +72,7 @@ func (this *memoryDb) GetLastUpdatedBlockNumber() int {
 
 func (this *memoryDb) SetLastUpdatedBlockNumber(blockNumber int) bool {
 	this.lastUpdatedBlcokNumber = blockNumber
-	return this.lastUpdatedBlcokNumber
+	return true
 }
 
 func (this *memoryDb) GetTransOffetsInLastBlock() int {
@@ -81,5 +81,5 @@ func (this *memoryDb) GetTransOffetsInLastBlock() int {
 
 func (this *memoryDb) SetTransOffetsInLastBlock(offset int) bool {
 	this.transOffetsInLastBlcok = offset
-	return this.transOffetsInLastBlcok
+	return true
 }
