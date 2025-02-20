@@ -1,4 +1,4 @@
-package service
+package database
 
 type Transaction struct {
 	From        string

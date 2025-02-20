@@ -1,5 +1,7 @@
 package model
 
+import "github.com/wuhen781/Tx-Parser/internal/database"
+
 var ErrBlockNumberNotInitialed = errors.New("lastBlcokNumber is not initialed")
 var ErrBLockNumberIsUpdated = errors.New("lastBlcokNumber is updated")
 
@@ -12,6 +14,14 @@ func NewModelParser() *ModelParser {
 	return &ModelParser{
 		db,
 	}
+}
+
+func (this *ModelParser) GetTransactions(address string) []database.Transaction {
+	return this.db.GetTransactions(address)
+}
+
+func (this *ModelParser) AddSubscribe(address string, blockNumber int) bool {
+	return this.db.AddSubscribe(address, blockNumber)
 }
 
 func (this *ModelParser) updateTransactionsByLastBlockNumber() error {
