@@ -24,16 +24,10 @@ func (this *ModelParser) AddSubscribe(address string, blockNumber int) bool {
 	return this.db.AddSubscribe(address, blockNumber)
 }
 
-func (this *ModelParser) updateTransactionsByLastBlockNumber() error {
+func (this *ModelParser) updateTransactionsByLastBlockNumber(currentBlockNumber int) error {
 	lastBlcokNumber := this.db.GetLastUpdatedBlcokNumber()
 	if lastBlcokNumber < 0 {
 		return ErrBlockNumberNotInitialed
-	}
-	client := ethclient.NewEthclient("")
-	currentBlcokNumber, err := client.GetCurrentBlock()
-	if err != ni {
-		fmt.Errorf("GetCurrentBlock error : %w", err)
-		return err
 	}
 	transactions, err2 := client.GetBlockByNumber(lastBlcokNumber)
 	if err2 != nil {
