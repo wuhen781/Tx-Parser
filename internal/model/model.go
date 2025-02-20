@@ -2,8 +2,6 @@ package model
 
 import "github.com/wuhen781/Tx-Parser/internal/database"
 import "errors"
-import "log"
-import "fmt"
 
 var ErrBlockNumberNotInitialed = errors.New("lastBlockNumber is not initialed")
 var ErrBLockNumberIsUpdated = errors.New("lastBlockNumber is updated")
@@ -51,10 +49,7 @@ func (this *ModelParser) UpdateTransactionsByLastBlockNumber(currentBlockNumber 
 	subMaps := make(map[string]bool)
 	for _, subscriber := range subscribers {
 		subMaps[subscriber] = true
-		log.Printf("debug UpdateTransactionsByLastBlockNumber subscriber %s", subscriber)
 	}
-	fmt.Println(subscribers)
-	fmt.Println(subMaps)
 	subscrbTrans := make([]database.Transaction, 0)
 	for _, transaction := range transactions {
 		from, to := transaction.From, transaction.To
@@ -72,7 +67,6 @@ func (this *ModelParser) UpdateTransactionsByLastBlockNumber(currentBlockNumber 
 				Type:        "",
 			}
 			subscrbTrans = append(subscrbTrans, subscrbTran)
-			log.Printf("debug UpdateTransactionsByLastBlockNumber from: %s , to: %s", subscrbTran.From, subscrbTran.To)
 		}
 	}
 	if this.db.SetTransactions(subscrbTrans) {

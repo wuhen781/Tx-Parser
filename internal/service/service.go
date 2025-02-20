@@ -62,6 +62,7 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 
 		lastBlockNumber := this.modelParser.GetDb().GetLastUpdatedBlockNumber()
 		if lastBlockNumber < 0 {
+			timer.Reset(time.Duration(0) * time.Second)
 			continue
 		}
 		currentBlockNumber, err := client.GetCurrentBlock()

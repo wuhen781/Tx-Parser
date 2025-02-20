@@ -1,18 +1,18 @@
 package database
 
-import "fmt"
-import "log"
+import "sync"
 
 type memoryDb struct {
 	transactions           map[string][]Transaction
 	subscribers            map[string]*subscriberInfo
+	subsMu                 sync.RWMutex
+	transMu                sync.RWMutex
 	lastUpdatedBlockNumber int
 	transOffetsInLastBlock int
 }
 
 type subscriberInfo struct {
 	fromBlockNumber int
-	lastGetOffset   int
 }
 
 func NewMemoryDb() *memoryDb {
@@ -25,31 +25,32 @@ func NewMemoryDb() *memoryDb {
 }
 
 func (this *memoryDb) AddSubscribe(address string, blockNumber int) bool {
+	this.subsMu.Lock()
+	defer this.subsMu.Unlock()
 	if _, ok := this.subscribers[address]; ok {
 		return true
 	}
 	this.subscribers[address] = &subscriberInfo{
 		fromBlockNumber: blockNumber,
-		lastGetOffset:   0,
 	}
-	log.Printf("debug AddSubscribe %v", this.subscribers)
 	return true
 }
 
 func (this *memoryDb) GetSubscribeFromBlockNumber(blockNumber int) []string {
+	this.subsMu.Lock()
+	defer this.subsMu.Unlock()
 	anses := make([]string, 0)
-	for addr, _ := range this.subscribers {
-		//if info.fromBlockNumber <= blockNumber { //From this point on, observations were made
-		anses = append(anses, addr)
-		//}
+	for addr, info := range this.subscribers {
+		if info.fromBlockNumber <= blockNumber { //From this point on, observations were made
+			anses = append(anses, addr)
+		}
 	}
-	fmt.Println("from get subscriber")
-	fmt.Println(this.subscribers)
-	fmt.Println(anses)
 	return anses
 }
 
 func (this *memoryDb) SetTransactions(transactions []Transaction) bool {
+	this.transMu.Lock()
+	defer this.transMu.Unlock()
 	for _, tx := range transactions {
 		from, to := tx.From, tx.To
 		if _, ok := this.transactions[from]; !ok {
@@ -67,15 +68,17 @@ func (this *memoryDb) SetTransactions(transactions []Transaction) bool {
 }
 
 func (this *memoryDb) GetTransactions(address string) []Transaction {
-	subscriberinfo, ok := this.subscribers[address]
+	this.transMu.Lock()
+	transactions, ok := this.transactions[address]
 	if !ok {
+		this.transMu.Unlock()
 		return make([]Transaction, 0)
 	}
-	transactions := this.transactions[address]
-	tranLen := len(transactions)
-	ans := transactions[subscriberinfo.lastGetOffset:tranLen]
-	this.subscribers[address].lastGetOffset = tranLen
-	return ans
+	delete(this.transactions, address)
+	this.transMu.Unlock()
+	anses := make([]Transaction, len(transactions))
+	copy(anses, transactions)
+	return anses
 }
 
 func (this *memoryDb) GetLastUpdatedBlockNumber() int {
