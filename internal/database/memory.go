@@ -1,6 +1,6 @@
 package database
 
-type memory struct {
+type memoryDb struct {
 	transactions           map[string][]Transaction
 	subscribers            map[string]*subscriberInfo
 	lastUpdatedBlcokNumber int
@@ -9,10 +9,11 @@ type memory struct {
 
 type subscriberInfo struct {
 	fromBlockNumber int
+	lastGetOffset   int
 }
 
-func NewMemory() *memory {
-	return &memory{
+func NewMemoryDb() *memoryDb {
+	return &memoryDb{
 		transactions:           make(map[string][]Transaction),
 		subscribers:            make(map[string]*subscriberInfo),
 		lastUpdatedBlcokNumber: -1,
@@ -20,18 +21,15 @@ func NewMemory() *memory {
 	}
 }
 
-type Db interface {
-	AddSubscribe(address string, blockNumber int) bool
-	GetSubscribeFromBlockNumber(blockNumber int) []string
-	GetTransactions(address string) []Transaction
-	SetTransactions(transactions []Transaction) bool
-	GetLastUpdatedBlcokNumber() int
-	SetLastUpdatedBlcokNumber(blockNumber int) bool
-	GetTransOffetsInLastBlock() int
-	SetTransOffetsInLastBlock(offset int) bool
+func (this *memoryDb) AddSubscribe(address string, blockNumber int) bool {
+	this.subscribers[address] = &subscriberInfo{
+		fromBlockNumber: blockNumber,
+		lastGetOffset:   0,
+	}
+	return true
 }
 
-func (this *memory) GetSubscribeFromBlockNumber(blockNumber int) []string {
+func (this *memoryDb) GetSubscribeFromBlockNumber(blockNumber int) []string {
 	anses := make([]string, 0)
 	for addr, info := range this.subscribers {
 		if info.fromBlockNumber <= blockNumber { //From this point on, observations were made
@@ -41,20 +39,47 @@ func (this *memory) GetSubscribeFromBlockNumber(blockNumber int) []string {
 	return anses
 }
 
-func (this *memory) GetLastUpdatedBlockNumber() int {
+func (this *memoryDb) SetTransactions(transactions []Transaction) bool {
+	for _, tx := range transactions {
+		from, to := tx.From, tx.To
+		if _, ok := this.transactions[from]; !ok {
+			this.transactions[from] = make([]Transaction, 0)
+		}
+		if _, ok := this.transactions[to]; !ok {
+			this.transactions[to] = make([]Transaction, 0)
+		}
+	}
+	this.transactions[from] = append(this.transactions[from], tx)
+	this.transactions[to] = append(this.transactions[to], tx)
+	return true
+}
+
+func (this *memoryDb) GetTransactions(address string) []Transaction {
+	subscriberinfo, ok := this.subscribers[address]
+	if !ok {
+		return make([]Transaction, 0)
+	}
+	transactions := this.transactions[address]
+	tranLen := len(transactions)
+	ans := transactions[subscriberinfo.lastGetOffset:tranLen]
+	this.subscribers[address].lastGetOffset = tranLen
+	return ans
+}
+
+func (this *memoryDb) GetLastUpdatedBlockNumber() int {
 	return this.lastUpdatedBlcokNumber
 }
 
-func (this *memory) SetLastUpdatedBlockNumber(blockNumber int) bool {
+func (this *memoryDb) SetLastUpdatedBlockNumber(blockNumber int) bool {
 	this.lastUpdatedBlcokNumber = blockNumber
 	return this.lastUpdatedBlcokNumber
 }
 
-func (this *memory) GetTransOffetsInLastBlock() int {
+func (this *memoryDb) GetTransOffetsInLastBlock() int {
 	return this.transOffetsInLastBlcok
 }
 
-func (this *memory) SetTransOffetsInLastBlock(offset int) bool {
+func (this *memoryDb) SetTransOffetsInLastBlock(offset int) bool {
 	this.transOffetsInLastBlcok = offset
 	return this.transOffetsInLastBlcok
 }

@@ -8,7 +8,7 @@ type ModelParser struct {
 }
 
 func NewModelParser() *ModelParser {
-	db := NewMemory()
+	db := NewMemoryDb()
 	return &ModelParser{
 		db,
 	}
