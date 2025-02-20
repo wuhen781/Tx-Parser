@@ -38,7 +38,7 @@ func main() {
 	// Start background worker
 	go func() {
 		defer wg.Done()
-		parser.UpdateTransactionsInBackGroundRegularly(ctx, 1)
+		parser.UpdateTransactionsInBackGroundRegularly(ctx, 3)
 	}()
 
 	// Start HTTP server
