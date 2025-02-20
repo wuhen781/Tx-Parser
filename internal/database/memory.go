@@ -1,5 +1,8 @@
 package database
 
+import "fmt"
+import "log"
+
 type memoryDb struct {
 	transactions           map[string][]Transaction
 	subscribers            map[string]*subscriberInfo
@@ -22,20 +25,27 @@ func NewMemoryDb() *memoryDb {
 }
 
 func (this *memoryDb) AddSubscribe(address string, blockNumber int) bool {
+	if _, ok := this.subscribers[address]; ok {
+		return true
+	}
 	this.subscribers[address] = &subscriberInfo{
 		fromBlockNumber: blockNumber,
 		lastGetOffset:   0,
 	}
+	log.Printf("debug AddSubscribe %v", this.subscribers)
 	return true
 }
 
 func (this *memoryDb) GetSubscribeFromBlockNumber(blockNumber int) []string {
 	anses := make([]string, 0)
-	for addr, info := range this.subscribers {
-		if info.fromBlockNumber <= blockNumber { //From this point on, observations were made
-			anses = append(anses, addr)
-		}
+	for addr, _ := range this.subscribers {
+		//if info.fromBlockNumber <= blockNumber { //From this point on, observations were made
+		anses = append(anses, addr)
+		//}
 	}
+	fmt.Println("from get subscriber")
+	fmt.Println(this.subscribers)
+	fmt.Println(anses)
 	return anses
 }
 

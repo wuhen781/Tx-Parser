@@ -39,13 +39,11 @@ func (this *EthParser) Subscribe(address string) bool {
 		log.Printf("Error getting current block: %v", err)
 		return false
 	}
-	modelParser := this.modelParser
-	return modelParser.AddSubscribe(address, blockNumber)
+	return this.modelParser.AddSubscribe(address, blockNumber)
 }
 
 func (this *EthParser) GetTransactions(address string) []database.Transaction {
-	modelParser := model.NewModelParser()
-	return modelParser.GetTransactions(address)
+	return this.modelParser.GetTransactions(address)
 }
 
 //Update transactions regularly in the background
@@ -53,7 +51,6 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 	timer := time.NewTimer(0)
 	defer timer.Stop()
 
-	modelParser := this.modelParser
 	client := ethclient.NewEthclient("")
 
 	for {
@@ -63,7 +60,10 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 		case <-timer.C:
 		}
 
-		lastBlockNumber := modelParser.GetDb().GetLastUpdatedBlockNumber()
+		lastBlockNumber := this.modelParser.GetDb().GetLastUpdatedBlockNumber()
+		if lastBlockNumber < 0 {
+			continue
+		}
 		currentBlockNumber, err := client.GetCurrentBlock()
 		transactions, err2 := client.GetBlockByNumber(lastBlockNumber)
 		if err != nil {
@@ -87,7 +87,7 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 				}
 				dbTransactions[idx] = dbTx
 			}
-			err3 := modelParser.UpdateTransactionsByLastBlockNumber(currentBlockNumber, dbTransactions)
+			err3 := this.modelParser.UpdateTransactionsByLastBlockNumber(currentBlockNumber, dbTransactions)
 			if err3 != nil {
 				log.Printf("Error updateTransactionsByLastBlockNumber %v", err)
 			} else {
@@ -96,5 +96,8 @@ func (this *EthParser) UpdateTransactionsInBackGroundRegularly(ctx context.Conte
 		}
 		timer.Reset(time.Duration(interval) * time.Second)
 	}
+}
 
+func (this *EthParser) SetLastUpdatedBlockNumber(blockNumber int) bool {
+	return this.modelParser.SetLastUpdatedBlockNumber(blockNumber)
 }
